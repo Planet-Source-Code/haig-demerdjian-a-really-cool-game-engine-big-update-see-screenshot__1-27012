@@ -1,0 +1,123 @@
+(Turn word wrap on)
+
+
+This text file will describe how the game was put together. I will put things into sections so it will be easier to understand. If you are fairly new to VB and don't understand some of this stuff by reading through it once, I suggest you read it again and again until it really soaks through. There are lots of words here I know, but if you have patients and read each sentence one by one without rushing as if your doing a book report, then I promise you will understand it. My code is fairly simple, there is minimal amounts of API, and everything was created by simple logic. The mathematics part of my code is at 2nd grade level, so don't be intimidated. I am not that smart, so my code shouldn't be complex. Also, even though I am explaining my code, if you understand how I made my "game engine", you can easily make yours by changing a few concepts of mine. So make sure you understand all this and you won't need my program even. So, just have patients.
+
+
+
+
+QUESTION #1: How is the map read/drawn?
+=======================================
+
+	Before I start to explain, you need to know some basic information about the size of the tiles, how many there are, and so on. Each tile is 40x40 pixels big. There are 255 tiles per map. There are 15 tiles across and 15 tiles down. The picturebox which all this is drawn into is 600x600 pixels big, 40x15 = 600. The pictureboxes on frmTiles are ARRAYS. All the code to load the map is in the MODULE under the "newmap" section. The sprites in the game are 50x50 pixels big, but this has nothing to do with the map, but I want to clearify that. Also, the tiles are drawn with BitBlt, so if you don't understand how to work with API, then it would be a good thing to learn it before continueing with this text file.
+	The maps are stored in the x#y#.map files. At the very start, the variables "mapx" and "mapy" are equal to 0. This is to load the map file "x0y0.map" on startup. As the player walks off the edge of the map, those two variables change so it will load the map that was to the side of the current map. This will be explained later on. If you open the map files up in notepad, you will notice that all it is is a bunch of numbers. There are two columns per row which looks sort of like this:
+
+##, #
+##, #
+##, #
+##, #
+##, #
+##, #
+##, #
+(and so on.....)
+
+	The first set of numbers is actually the tile number that will be drawn, and this is assigned to the variable "t", and the second number, which will always be 0 or 1, contains the information if the player can walk on this tile or not, which gets assigned to the variable "w". So when the game engine reads from these files to draw the map, it reads it number by number. It will read the first number and draw the tile which equals that number. After that, it will check the next number and make the variable "walk" equal it. Remember, this is always going to be either 0 or 1, 0 meaning you can't walk on this, and 1 means you can. Then it will go down to the next row and do the same thing until all tiles have been drawn. Also, you should notice that the variable "walk" is an array from 0 to 254. This is because there are 255 tiles per map, and each "walk" will hold the information for each tile. Most of the game information is held in arrays actually. Once you understand this, most of the stuff falls into place quiet easily.
+	So right now the game is drawing the tiles and storing the information on which ones you can walk on. But how does it actually now where these tiles are once they are drawn? Good question, this is where the variables "tLEFT" and "tTOP" comes into place. "tLEFT" holds the left position of the tile, sort of like picturebox.left and "tTOP" holds the top position of the tile, sort of like picturebox.top. See, it's pretty simple. Remember these variables are also ARRAYS, so there is a "tLEFT" and "tTOP" for EACH tile. You can see that this emulates an array of pictureboxes or imageboxes in a way, but it's not.
+	Notice how I have so many for/next statements? Well this is for all the variables, because they are all in arrays the for/next statement will do just fine to put info into these variables.
+	The variables "X" and "Y" hold the position of the TOP LEFT corner of each tile, but these are NOT arrays. "X" and "Y" will equal something else each time the for/next statement starts over. But notice this line of code:
+
+tLEFT(land) = X
+tTOP(land) = Y
+
+	"tLEFT" and "tTOP" store the "X" and "Y" information permenantly. The "land" is the for/next statement. "X" grows by 40 each time the for/next statement rolls around. This is because each tile is 40 pixels wide, so if you enlarge "X" by 40, the next tile will be drawn exactly next to it, no space or overlaping. "Y" grows by 40 once everytime the row of tiles touch the side of the picturebox. All of this is done with these simple lines of code:
+
+X = X + 40
+If X >= 40 * 15 Then
+X = 0
+Y = Y + 40
+End If
+
+	See "X" grow by 40 each time the for/next statement rolls around? Well notice the next line, since there are 15 tiles across, this means I don't want "X" to be larger then 40*15. When "X" is at the position of the 15th tile, it will go back to 0, simple as that right! Yep, it sure is. Now also notice that "Y" grew by 40, this is because the tiles must be directly under the previous row. There is nothing to it once you understand this. Remember that "tLEFT" and "tTOP" are storing these numbers as things go along. Now that you know how the tiles are positioned, you should take a look at this line of code:
+
+BitBlt(frmMain.picRefresh.hdc, X, Y, 40, 40, frmTiles.tile(t).hdc, 0, 0, SRCCOPY)
+
+	This is what actually puts each tile in the picturebox. I'll disect this down a little to give an understanding. "frmMain.picRefresh.hdc" is the destination of where BitBlt is going to paste the tile. "X, Y" is the TOP LEFT position of the tile, so the coordinate (560, 0) is the last tile of the first row, or tile 15 of 255. "40, 40" is telling BitBlt how big the picture is, since it's 40x40 I put "40, 40", this is really simple right? Now "frmTiles.tile(t).hdc" is the source if the picture. "frmTiles" is the form which holds all the pictureboxes with the tiles in them, and I made all the pictureboxes an ARRAY. And notice that "t" is the number that was pulled from the .map files. So if "t" equaled 33, then it will go to the 33rd tile on that form and get the picture from that. "0, 0" is saying where you want to start getting the picture from? I put "0, 0" because it will start from the TOP LEFT corner, which inturn will go 40 pixels left and 40 pixels down. This is exactly the whole tile, not a part of it. "SRCCOPY" is the method of which it will paste it. In the Declarations section, you will notice there are 3 ways it can paste it, but for this method I will just plain COPY it. If you don't understand how BitBlt is working, then you should find a tutorial on it, because I didn't go into detail on how it works.
+	Now the map has been drawn after the for/next statement does this steps 255 times! Things seem more complex in that procedure than it really is because I have code in there which puts enemies into place, but have nothing to do with the map actually being drawn. If the code for the enemies weren't there, the code would be half the size it is, so try to ignore that enemy code for now until you totally get how the map is created.
+
+
+
+QUESTION #2: How does the player move?
+======================================
+
+	All the code for the player movement can be found in the picMain picturebox in the "KeyDown" section. I will be posting more code from this section, because it is a little more complex then the previous section.
+
+If dHIT = 1 Then Exit Sub
+
+	This is the second line of code to be found here and it is fairly simple actually. "dHIT" is the variable which contains the info if the player or AKA "Damien" (this is where the 'd' of 'dHIT' came from) gets hit. Don't worry about this for now, but all this does is stop the player from controlling when he gets hit.
+
+If KeyCode = 32 Then
+Call cast_magic_up
+End If
+
+	Ignore this code. This was when I was trying to add magic abilities to the game but I quit working on it. It was going to be a fireball that shot the direction you were looking when your pressed space. Just ignore this feature, it doesn't work.
+
+If KeyCode = 37 Then
+For t = 0 To 254
+If playerx + 11 - wSPEED >= tLEFT(t) And playerx + 11 - wSPEED <= tLEFT(t) + 40 And playery + 38 >= tTOP(t) And playery + 38 <= tTOP(t) + 40 And walk(t) = 0 Then Exit Sub
+If playerx + 11 - wSPEED >= tLEFT(t) And playerx + 11 - wSPEED <= tLEFT(t) + 40 And playery + 50 >= tTOP(t) And playery + 50 <= tTOP(t) + 40 And walk(t) = 0 Then Exit Sub
+Next t
+
+	This is where the important things begin. This occurs when the person hits the LEFT ARROW key. The first thing it does is start a for/next statement. Again, this is because of all the ARRAYS that I have. The two lines of code that follow is just a basic COLLISION DETECTION. "playerx" is the left of the player, and "playery" is the top. Just think of it as if it were a picturebox and you did picturebox.left or picturebox.top. But since this is not a picturebox I had to store the LEFT and TOP information with a variable. Now the weird thing is the "+ 11" part. I know what your thinking, why is it there? Don't I just want to check the sides of the character? Yes and no. Do you see the "shadow" the sprite contains? This is actually what I am checking the sides of. I wanted the game to be more realistic and check near his feat instead of the exact side of the sprite. So lets say that "playerx" was 400, then 400 + 11 would be the place where the "shadow" starts. When I was making the graphics for the player, I noticed that the exact left edge of the shadow started at the 11th pixel on the X axis, this is where I got "+ 11" from. I hope you understand me. If you don't, keep reading because I will explain more later. "wSPEED" is the variable which contains how "fast" the character moves. When the game loads up, it will automatically set this variable to 7. I am SUBTRACTING this because I want to check the position the player will be BEFORE he moves there. So here is a quick review of all this. Let us say that "playerx" is 400, the shadow will be at 411, annd the position he will be IF he is allowed to walk there is 411 - 7, which is what class? 404! So 404 is the place the "shadow/feet" of the player will be if it is allowed to walk in the LEFT direction. Boy, I hope this is all processing in your head. This is extremely simple if you just think about it for a second.
+	OK, take a break for a second and run the program. I want you to observe carefully how and where the character stops moving. Notice this! When you are walking upwards and you reach the edge of the land, it doesn't stop you at the top of your head does it? No it doesn't. It is letting you walk untill your FEET are touching the edge of the tile! This is what I meant by being more realistic. If I don't add or subtract numbers from the left or top of the sprite, you will be stopped from walking as soon as the image touches a non-walkable tile. This will look weird because your feet will be many pixels away from the water, but you still can't walk closer. Do you see where my logic is coming from?
+	You can stop the game now. I will tell you this now so I won't have to do so later on. See those parts where I add 11 to "playerx" and where I add 38 or 50 to "playery"? That is the place where the shadow starts on the image. But 50 isn't too weird because the actuall sprite is 50x50 so the bottom of the shadow is the bottom of the sprite, but this is not the case for the top of the shadow, which starts at the 38th pixel. I'll paste the code again so you won't have to scroll up.
+
+If KeyCode = 37 Then
+For t = 0 To 254
+If playerx + 11 - wSPEED >= tLEFT(t) And playerx + 11 - wSPEED <= tLEFT(t) + 40 And playery + 38 >= tTOP(t) And playery + 38 <= tTOP(t) + 40 And walk(t) = 0 Then Exit Sub
+If playerx + 11 - wSPEED >= tLEFT(t) And playerx + 11 - wSPEED <= tLEFT(t) + 40 And playery + 50 >= tTOP(t) And playery + 50 <= tTOP(t) + 40 And walk(t) = 0 Then Exit Sub
+Next t
+
+	So if the LEFT of the SHADOW subtracted by the SPEED of which the character walks is GREATER than the left side of the tile AND...... this is the first part of a 4 part collision detection. Now it's the same thing again, but we are checking the RIGHT side of the tile. So we aren't changing anything about the character sprite but we are adding 40 to the tiles left side, because the tile is 40 pixels in width. We are doing LESS than this time because the left of the shadow must be between the left and right side of the tile to be inside of the tile right? You must keep in mind that this is while the player is walking in the left direction, don't forget this. These numbers will be changing if he walks in other directions. Now we will be checking the top and bottom of the shadow to see if it is between the top and the bottom of the tile. This will be the 3rd part of a 4 part collision detection. If "playery" + 38 is GREATER than "tTOP", in English means, if the TOP of the shadow is GREATER than the top of the tile. And for the last part, if "playery" + 38 is LESS than the "tTOP + 40", in English means, if the TOP of the shadow is LESS then the bottom of the tile. OK, so far we checked if the TOP LEFT of the shadow is inside this tile, but now we must know if you are allowed to walk on this tile. This is why there is "AND walk(t) = 0". Remember how I said 0 means you can't walk on it? So as you can tell that this whole line of code is trying to stop you from walking on water, thats why we are exiting the sub here.
+	Notice this. See how "tLEFT" and "tTOP" and "walk" are all ARRAYS here? This is what it is doing, it is actually checking every single tile on the map to pinpoint which one you are actually trying to step on. This is why I had a for/next statement. It's checking from tile 0 to tile 254, going from left to right.
+	WOW, that took a long time for me to explain such a simple concept. I went into as much detail possible because I am assuming you have never done collision detection before. If you have, this should be extremely easy for you to comprehend (grasp) the idea. If you don't get this, you must reread it again and again. If you still can't understand, then you must do collision detection with basic pictureboxes instead of working with variables.
+	Now we aren't done yet, I still didn't go over the last line of code, but don't worry because it's quick to explain. It is exactly the same as the line of code I just explained except for 1 minor change; we are checking the BOTTOM LEFT of the shadow instead of the TOP LEFT. This is resembled in the change from adding 38 to adding 50. That's it! In collision detection, you must always check all corners of something. If the person is walking LEFT, we must check the TOP LEFT and BOTTOM LEFT of itself. If the person is walking UP, we must check the TOP LEFT and TOP RIGHT of itself. Moving RIGHT? Check the TOP RIGHT and BOTTOM RIGHT. Feel like walking down a little? Check the BOTTOM RIGHT and BOTTOM LEFT. That's it folks, that's all there is to it. You must check 2 corners depending on which way you are moving, or in a game of pong, the corners of the ball depending on which way the ball is moving.
+	I am going to skip the other three directions, because I already explained in theory how everything works. Only the numbers will be a little different but everything works the same.
+
+direction = dLEFT
+framex = fLEFT
+framey = framey + 50
+playerx = playerx - wSPEED
+If framey >= 50 * 8 Then framey = 0
+
+	This follows after the collision detection. This code won't execute if you are trying to walk on a non-walkable tile because of the exit sub. But if everything is OK and you are allowed to walk, then this code will execute. "direction" is the variable which is used in the animation of the sprite. You must know what 4 variables equal for you to understand how the animation works. "fLEFT", "fUP", "fRIGHT", and "fDOWN" equal 0, 100, 200, and 300 respectively (in that order). You can find this in the Declarations section of the module. Ignore the variable "direction", "dLEFT", "dUP", "dRIGHT", and "dDOWN" because I was checking what it does while writing this tutorial and noticed it has no purpose. I think this had a purpose when casting magic, but since the magic was never implemented it means these variables do nothing. So ignore it. "framex" is the pixel location of the X axis of the animation. If you would quickly check "frmTiles" you will notice a huge picturebox called "picDamien". This is all of the frames of animation for the character you control. Remember how I said the sprite itself is 50x50? Well this is what "framex" is doing. When "framex" equals "fLEFT" (which in turn is 0), BitBlt will be start from the very left of the picturebox when it is doing the drawing. "fUP" equals 100, so when your walking up, BitBlt will start from the 100th pixel of the picturebox. It's not by 50 because I have the mask also, which is another 50 pixels, so everything must go by 100. The only thing that changes is "framey". "framey" will grow larger by 50 every time you walk in the same direction again and again. But at a certain point the frames of animation run out so we must start over, this is what "If framey >= 50 * 8 Then framey = 0" does. It just resets it to the first frame of animation once it went through all 8. Simple right? Now "playerx" is simple getting subtracted by 7 ("wSPEED") because you are walking left.
+
+a = BitBlt(picMain.hdc, 0, 0, picMain.Width, picMain.Height, picRefresh.hdc, 0, 0, SRCCOPY)
+a = BitBlt(picMain.hdc, playerx, playery, 50, 50, frmTiles.picDamien.hdc, framex + 50, framey, SRCAND)
+a = BitBlt(picMain.hdc, playerx, playery, 50, 50, frmTiles.picDamien.hdc, framex, framey, SRCINVERT)
+If playerx < 0 Then
+playerx = picMain.ScaleWidth
+mapx = mapx - 1
+Call newmap
+End If
+End if
+
+The first line of BitBlt puts a fresh copy of the background so all the previous sprites get erased. It doesn't have to reload the whole map again, it just takes the background from the "buffer" picturebox. "picMain" is the picturebox which displays everything, but "picRefresh" is the picturebox which got the map loaded onto it. So all it's doing is copying all of "picRefresh" into "picMain". The second line of BitBlt is pasting the mask of the sprite onto the background. The third BitBlt pastes the color version of the image right over the mask, which inturn makes the black and white sections transparent. Notice how I didn't use "SRCCOPY" for the last two. Read up on BitBlt somewhere else if you don't know what that stuff means. Also notice how there is "framex + 50" for the second line of code instead of just "framex". If you noticed in the "picDamien" picturebox the mask was to the right of the color version. This is 50 pixels ahead of "fLEFT" or the 0 position. So we add 50 so it will get the mask, but we add nothing for the third line so it will get the color version. This is very simple to understand if you ever did BitBlt animation before. Now "If playerx < 0 Then" just checks if the player walked off the side of the map, and if it does it will put it on the total right side of the map and load the map which was to the left of the current map. "mapx" and "mapy" variables hold the coordinate numbers for the curent map, so if I want to the change the map to the one on the left of this one I would subtract 1 from "mapx". That is what "mapx = mapx - 1" is doing. Now if he walked to the top of the map, we wouldn't be working with "mapx" but instead with "mapy". We would have added 1 to "mapy" if you walked off the top of the map. That's it. Now we must call the procedure to make a new map to create it.
+	We just finished understanding what happens when the player just presses the LEFT ARROW key! I explained in great detail for such a simple process. The rest of the code is the same, except the numbers change a little so I don't have to talk about all of that do I?
+
+For t = 0 To 254
+If tENEMY(t) = 1 Then
+a = BitBlt(picMain.hdc, tENEMY_LEFT(t), tENEMY_TOP(t), 50, 50, frmTiles.picSoldier.hdc, tENEMY_frameX(t) + 50, tENEMY_frameY(t), SRCAND)
+a = BitBlt(picMain.hdc, tENEMY_LEFT(t), tENEMY_TOP(t), 50, 50, frmTiles.picSoldier.hdc, tENEMY_frameX(t), tENEMY_frameY(t), SRCINVERT)
+End If
+Next t
+picMain.Refresh
+
+	This for/next statement just draws the enemies in their place while you are moving. If this wasn't here, then while you are holding down the keys to move your guy, the enemies would disapear untill the timer gets around to drawing them again. So in a sense, the enemies will be constantly flickering while you are walking. "picMain.Refresh" just refreshes it so you will see the change of what happened after you moved.
+	That's it!!! I finally finished explaining that simple question #2. That took a long time, but I am glad I did.
+
+
+
+QUESTION #3: How does the enemy move?
+=====================================
+
+	This will be explained later.
